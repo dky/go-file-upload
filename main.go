@@ -10,6 +10,7 @@ import (
 	"crypto/md5"
 	"io"
 	"strconv"
+	"flag"
 )
 
 func upload(w http.ResponseWriter, r *http.Request) {
@@ -42,10 +43,18 @@ func upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/upload", upload)
+	port := flag.String("p", ":8000", "port to serve on")
+	directory := flag.String("d", "./uploads", "the directory of static file to host")
+	flag.Parse()
 
-	err := http.ListenAndServe(":9092", nil)
+	http.HandleFunc("/upload", upload)
+	http.Handle("/", http.FileServer(http.Dir(*directory)))
+
+	err := http.ListenAndServe(*port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+
+	log.Printf("Serving %s on HTTP port: %s\n", *directory, *port)
+	log.Fatal(http.ListenAndServe(":"+*port, nil))
 }
